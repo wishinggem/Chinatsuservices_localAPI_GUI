@@ -33,10 +33,10 @@ namespace Chinatsuservices_localAPI_GUI
             OutputConsole = new RichTextBox();
             label2 = new Label();
             proccessBar = new ProgressBar();
-            CurrentRunningAPIProccCount = new Label();
             Run_API = new Button();
             Rebuld_Config = new Button();
             Open_Config = new Button();
+            TimeTillNextCall = new Label();
             SuspendLayout();
             // 
             // OutputConsole
@@ -66,15 +66,6 @@ namespace Chinatsuservices_localAPI_GUI
             proccessBar.Size = new Size(505, 15);
             proccessBar.TabIndex = 3;
             proccessBar.ForeColorChanged += proccessBar_ForeColorChanged;
-            // 
-            // CurrentRunningAPIProccCount
-            // 
-            CurrentRunningAPIProccCount.AutoSize = true;
-            CurrentRunningAPIProccCount.Location = new Point(521, 16);
-            CurrentRunningAPIProccCount.Name = "CurrentRunningAPIProccCount";
-            CurrentRunningAPIProccCount.Size = new Size(150, 15);
-            CurrentRunningAPIProccCount.TabIndex = 4;
-            CurrentRunningAPIProccCount.Text = "Current API Process Count:";
             // 
             // Run_API
             // 
@@ -108,15 +99,24 @@ namespace Chinatsuservices_localAPI_GUI
             Open_Config.UseVisualStyleBackColor = true;
             Open_Config.Click += Open_Config_Click;
             // 
+            // TimeTillNextCall
+            // 
+            TimeTillNextCall.AutoSize = true;
+            TimeTillNextCall.Location = new Point(477, 16);
+            TimeTillNextCall.Name = "TimeTillNextCall";
+            TimeTillNextCall.Size = new Size(155, 15);
+            TimeTillNextCall.TabIndex = 8;
+            TimeTillNextCall.Text = "Time till next Auto API Run: ";
+            // 
             // Main
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(714, 424);
+            Controls.Add(TimeTillNextCall);
             Controls.Add(Open_Config);
             Controls.Add(Rebuld_Config);
             Controls.Add(Run_API);
-            Controls.Add(CurrentRunningAPIProccCount);
             Controls.Add(proccessBar);
             Controls.Add(label2);
             Controls.Add(OutputConsole);
@@ -133,7 +133,6 @@ namespace Chinatsuservices_localAPI_GUI
         private RichTextBox OutputConsole;
         private Label label2;
         private ProgressBar proccessBar;
-        private Label CurrentRunningAPIProccCount;
         private Button Run_API;
         private Button Rebuld_Config;
         private Button Open_Config;
@@ -176,5 +175,7 @@ namespace Chinatsuservices_localAPI_GUI
                 }
             }
         }
+
+        private Label TimeTillNextCall;
     }
 }

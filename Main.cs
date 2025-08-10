@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Windows.Forms;
+using System.Xml.Serialization;
 using Timer = System.Windows.Forms.Timer;
 
 namespace Chinatsuservices_localAPI_GUI
@@ -10,21 +11,54 @@ namespace Chinatsuservices_localAPI_GUI
         private Timer timer1;
         private MangaAPI api;
         public static int runningAPICount = 0;
+        private Timer timeTillNextAPICall;
+        private int secondsRemaining = 0;
 
         public Main()
         {
             InitializeComponent();
 
-            RoundControl(Run_API, 10);
+            RoundControl(Run_API, 20);
             RoundControl(proccessBar, 10);
             RoundControl(OutputConsole, 10);
+            RoundControl(Rebuld_Config, 10);
+            RoundControl(Open_Config, 10);
 
             Output.outputConsole = OutputConsole;
             proccessBar.Minimum = 0;
+
+            timeTillNextAPICall = new Timer();
+            timeTillNextAPICall.Interval = 1000; // Update every second
+
+
             RunAPI();
+            ResetCountdown();
+            timeTillNextAPICall.Start();
         }
 
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            if (api != null)
+            {
+                if (secondsRemaining > 0)
+                {
+                    secondsRemaining--;
 
+                    int minutes = secondsRemaining / 60;
+                    int seconds = secondsRemaining % 60;
+                    TimeTillNextCall.Text = $"Time till next auto API Run: {minutes:D2}:{seconds:D2}";
+                }
+                else
+                {
+
+                }
+            }
+        }
+
+        private void ResetCountdown()
+        {
+            secondsRemaining = api.GetAPISleepAmount() / 1000; // Convert milliseconds to seconds
+        }
 
         private void RunAPI()
         {
@@ -39,7 +73,6 @@ namespace Chinatsuservices_localAPI_GUI
 
             api = new MangaAPI();
             api.proccessBar = proccessBar;
-            api.CurrentRunningAPIProccCount = CurrentRunningAPIProccCount;
             proccessBar.ForeColor = Color.FromArgb(47, 41, 237);
             api.SetInits();
             api.SetupLogData();
@@ -63,6 +96,9 @@ namespace Chinatsuservices_localAPI_GUI
                 {
                     try
                     {
+                        Color defaultColor = Run_API.ForeColor;
+                        Run_API.ForeColor = Color.Red;
+
                         // Reset progress bar safely on UI thread
                         Invoke((Action)(() =>
                         {
@@ -73,7 +109,10 @@ namespace Chinatsuservices_localAPI_GUI
                         // Your API calls
                         api.Log(MangaAPI.LogLevel.info,
                             $"Running Managa API Main, Process ID: {Process.GetCurrentProcess().Id}");
-                        api.Run();
+                        await api.Run();
+
+                        Run_API.ForeColor = defaultColor;
+                        ResetCountdown();
                     }
                     catch (Exception error)
                     {

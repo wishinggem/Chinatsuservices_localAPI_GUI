@@ -27,7 +27,6 @@ public class MangaAPI
     private string mangaRootStoragePath = "";
 
     public ProgressBar proccessBar;
-    public Label CurrentRunningAPIProccCount;
 
     private string accountToLibraryPath = "";
     private string librariesPath = "";
@@ -57,8 +56,6 @@ public class MangaAPI
         {
             Main.runningAPICount++;
 
-            CurrentRunningAPIProccCount.Text = $"Running API Proccesses: {Main.runningAPICount}";
-
             SetupLogData();
             DeleteExpiredCache();
             await UpdateCache();
@@ -68,8 +65,6 @@ public class MangaAPI
             lastAPIRefershTime = DateTime.Now;
 
             Main.runningAPICount--;
-
-            CurrentRunningAPIProccCount.Text = $"Running API Proccesses: {Main.runningAPICount}";
         }
         catch (Exception e)
         {
@@ -80,7 +75,7 @@ public class MangaAPI
     //returns API refresh time +1 so that it prevents any time collisions with api
     public int GetAPISleepAmount()
     {
-        return (apiRefreshTime + 1) * 60000;
+        return (apiRefreshTime) * 60000;
     }
 
     public void DeleteAllCache()
