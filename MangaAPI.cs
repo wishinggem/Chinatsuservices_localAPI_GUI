@@ -27,6 +27,8 @@ public class MangaAPI
     private string mangaRootStoragePath = "";
 
     public ProgressBar proccessBar;
+    public Button Run_API_Button;
+    public Color defaultColor;
 
     private string accountToLibraryPath = "";
     private string librariesPath = "";
@@ -61,7 +63,6 @@ public class MangaAPI
             await UpdateCache();
             //CheckForUpdatedChapeters();
             BackupDir();
-            Log(LogLevel.info, $"Finished All Manga API Proccesses, If all API proccessses are complete the API will now sleep for {GetAPISleepAmount() / 60000} minutes");
             lastAPIRefershTime = DateTime.Now;
 
             Main.runningAPICount--;
@@ -70,6 +71,7 @@ public class MangaAPI
         {
             Log(LogLevel.error, $"Failed to run API error: {e.Message}");
         }
+        Run_API_Button.ForeColor = defaultColor;
     }
 
     //returns API refresh time +1 so that it prevents any time collisions with api
@@ -462,7 +464,15 @@ public class MangaAPI
             rateLimitTimeout = config.rateLimitTimeout;
             apiRefreshTime = config.apiRefreshTime;
             cacheExpireTime = config.cacheExpireDays;
-            Log(LogLevel.info, $"Cache Expires after {cacheExpireTime} days");
+            Log(LogLevel.info, "Config Data:");
+            Log(LogLevel.info, $"   Cache Expires after {cacheExpireTime} days");
+            Log(LogLevel.info, $"   API Root Path: {APIRootPath}");
+            Log(LogLevel.info, $"   Manga Root Storage Path: {mangaRootStoragePath}");
+            Log(LogLevel.info, $"   Account to Library Path: {accountToLibraryPath}");
+            Log(LogLevel.info, $"   Libraries Path: {librariesPath}");
+            Log(LogLevel.info, $"   Accounts Path: {accountsPath}");
+            Log(LogLevel.info, $"   Cover Root Path: {coverRootPath}");
+            Log(LogLevel.info, $"   Cache Path: {cachePath}");
         }
         else
         {
@@ -788,33 +798,33 @@ public class MangaAPI
                 level = "Info";
                 Output.WriteColored($"[{DateTime.Now}] ", Color.White);
                 Output.WriteColored($"[{level.ToUpper()}] ", Color.Green);
-                Output.WriteColored($"{message}.{Environment.NewLine}", Color.White);
+                Output.WriteColored($"{message}{Environment.NewLine}", Color.White);
 
-                log += $"[{DateTime.Now}] [{level.ToUpper()}] {message}.";
+                log += $"[{DateTime.Now}] [{level.ToUpper()}] {message}";
                 break;
 
             case LogLevel.warning:
                 level = "Warning";
                 Output.WriteColored($"[{DateTime.Now}] ", Color.White);
-                Output.WriteColored($"[{level.ToUpper()}] {message}.{Environment.NewLine}", Color.Yellow);
+                Output.WriteColored($"[{level.ToUpper()}] {message}{Environment.NewLine}", Color.Yellow);
 
-                log += $"[{DateTime.Now}] [{level.ToUpper()}] {message}.";
+                log += $"[{DateTime.Now}] [{level.ToUpper()}] {message}";
                 break;
 
             case LogLevel.error:
                 level = "Error";
                 Output.WriteColored($"[{DateTime.Now}] ", Color.White);
-                Output.WriteColored($"[{level.ToUpper()}] {message}.{Environment.NewLine}", Color.Red);
+                Output.WriteColored($"[{level.ToUpper()}] {message}{Environment.NewLine}", Color.Red);
 
-                log += $"[{DateTime.Now}] [{level.ToUpper()}] {message}.";
+                log += $"[{DateTime.Now}] [{level.ToUpper()}] {message}";
                 break;
 
             case LogLevel.test:
                 level = "Test";
                 Output.WriteColored($"[{DateTime.Now}] ", Color.White);
-                Output.WriteColored($"[{level.ToUpper()}] {message}.{Environment.NewLine}", Color.Blue);
+                Output.WriteColored($"[{level.ToUpper()}] {message}{Environment.NewLine}", Color.Blue);
 
-                log += $"[{DateTime.Now}] [{level.ToUpper()}] {message}.";
+                log += $"[{DateTime.Now}] [{level.ToUpper()}] {message}";
                 break;
         }
 

@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Windows.Forms;
 using System.Xml.Serialization;
+using static MangaAPI;
 using Timer = System.Windows.Forms.Timer;
 
 namespace Chinatsuservices_localAPI_GUI
@@ -18,7 +19,7 @@ namespace Chinatsuservices_localAPI_GUI
         {
             InitializeComponent();
 
-            RoundControl(Run_API, 20);
+            RoundControl(Run_API, 10);
             RoundControl(proccessBar, 10);
             RoundControl(OutputConsole, 10);
             RoundControl(Rebuld_Config, 10);
@@ -29,29 +30,25 @@ namespace Chinatsuservices_localAPI_GUI
 
             timeTillNextAPICall = new Timer();
             timeTillNextAPICall.Interval = 1000; // Update every second
+            timeTillNextAPICall.Tick += Timer_Tick;
 
 
             RunAPI();
-            ResetCountdown();
-            timeTillNextAPICall.Start();
         }
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            if (api != null)
+            if (secondsRemaining > 0)
             {
-                if (secondsRemaining > 0)
-                {
-                    secondsRemaining--;
+                secondsRemaining--;
 
-                    int minutes = secondsRemaining / 60;
-                    int seconds = secondsRemaining % 60;
-                    TimeTillNextCall.Text = $"Time till next auto API Run: {minutes:D2}:{seconds:D2}";
-                }
-                else
-                {
+                int minutes = secondsRemaining / 60;
+                int seconds = secondsRemaining % 60;
+                TimeTillNextCall.Text = $"Time till next auto API Run: {minutes:D2}:{seconds:D2}";
+            }
+            else
+            {
 
-                }
             }
         }
 
@@ -74,15 +71,17 @@ namespace Chinatsuservices_localAPI_GUI
             api = new MangaAPI();
             api.proccessBar = proccessBar;
             proccessBar.ForeColor = Color.FromArgb(47, 41, 237);
+            api.Run_API_Button = Run_API;
+            api.defaultColor = Run_API.ForeColor;
             api.SetInits();
             api.SetupLogData();
 
             Thread.Sleep(10);
-            api.Log(MangaAPI.LogLevel.info, $"");
-            api.Log(MangaAPI.LogLevel.info, $"Starting new API Proccess, Proccess ID: {Process.GetCurrentProcess().Id}");
-            api.Log(MangaAPI.LogLevel.info, $"");
 
             StartApiLoop(api.GetAPISleepAmount());
+
+            ResetCountdown();
+            timeTillNextAPICall.Start();
         }
 
         private void StartApiLoop(int intervalMs)
@@ -96,9 +95,6 @@ namespace Chinatsuservices_localAPI_GUI
                 {
                     try
                     {
-                        Color defaultColor = Run_API.ForeColor;
-                        Run_API.ForeColor = Color.Red;
-
                         // Reset progress bar safely on UI thread
                         Invoke((Action)(() =>
                         {
@@ -107,11 +103,12 @@ namespace Chinatsuservices_localAPI_GUI
                         }));
 
                         // Your API calls
+                        api.Log(MangaAPI.LogLevel.info, $"");
                         api.Log(MangaAPI.LogLevel.info,
                             $"Running Managa API Main, Process ID: {Process.GetCurrentProcess().Id}");
+                        api.Log(MangaAPI.LogLevel.info, $"");
                         await api.Run();
-
-                        Run_API.ForeColor = defaultColor;
+                        api.Log(LogLevel.info, $"Finished All Manga API Proccesses, If all API proccessses are complete the API will now sleep for {api.GetAPISleepAmount() / 60000} minutes");
                         ResetCountdown();
                     }
                     catch (Exception error)
@@ -127,9 +124,14 @@ namespace Chinatsuservices_localAPI_GUI
 
         private void Run_API_Click(object sender, EventArgs e)
         {
+            Color defaultColor = Run_API.ForeColor;
+            Run_API.ForeColor = Color.Red;
             try
             {
+                api.Log(MangaAPI.LogLevel.info, $"");
+                api.Log(MangaAPI.LogLevel.info, $"Manually Invoking API");
                 api.Log(MangaAPI.LogLevel.info, $"Running Managa API Main, Proccess ID: {Process.GetCurrentProcess().Id}");
+                api.Log(MangaAPI.LogLevel.info, $"");
                 api.Run();
             }
             catch (Exception error)
@@ -140,6 +142,7 @@ namespace Chinatsuservices_localAPI_GUI
 
         private void Rebuld_Config_Click(object sender, EventArgs e)
         {
+            api.Log(MangaAPI.LogLevel.info, $"Rebuilding Config");
             api.SetInits();
             api.SetupLogData();
         }

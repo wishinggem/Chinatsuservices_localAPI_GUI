@@ -102,7 +102,7 @@ namespace Chinatsuservices_localAPI_GUI
             // TimeTillNextCall
             // 
             TimeTillNextCall.AutoSize = true;
-            TimeTillNextCall.Location = new Point(477, 16);
+            TimeTillNextCall.Location = new Point(491, 16);
             TimeTillNextCall.Name = "TimeTillNextCall";
             TimeTillNextCall.Size = new Size(155, 15);
             TimeTillNextCall.TabIndex = 8;
