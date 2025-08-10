@@ -73,8 +73,8 @@ namespace Chinatsuservices_localAPI_GUI
             proccessBar.ForeColor = Color.FromArgb(47, 41, 237);
             api.Run_API_Button = Run_API;
             api.defaultColor = Run_API.ForeColor;
-            api.SetInits();
             api.SetupLogData();
+            api.SetInits();
 
             Thread.Sleep(10);
 
