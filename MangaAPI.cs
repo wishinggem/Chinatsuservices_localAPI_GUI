@@ -334,12 +334,13 @@ public class MangaAPI
         var Libraries = JsonHandler.DeserializeJsonFile<LibraryFromID>(librariesPath).collection;
         var link = JsonHandler.DeserializeJsonFile<AccountToLibraries>(accountToLibraryPath).link;
         var accounts = JsonHandler.DeserializeJsonFile<List<Account>>(accountsPath);
-        EmailHandler emailHandler = new EmailHandler(config.smtpServer, config.smtpPort, config.fromEmail, config.emailPassword);
 
         var accountMap = accounts.ToDictionary(a => a.ID);
         var libraryEntryMap = Libraries.ToDictionary(lib => lib.Key, lib => lib.Value.entries);
         var libraryToAccountMap = link.GroupBy(kvp => kvp.Value)
                                       .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key).ToList());
+
+        Dictionary<string, List<string>> updatedMangaMap = new Dictionary<string, List<string>>(); //account email, manga titles
 
         foreach (var old in oldCachedManga)
         {
@@ -348,6 +349,7 @@ public class MangaAPI
             {
                 foreach (var (libraryID, entries) in libraryEntryMap)
                 {
+
                     foreach (var manga in entries)
                     {
                         if (ExtractMangaIdFromUrl(manga.Link) == updated.managaId)
@@ -358,12 +360,14 @@ public class MangaAPI
                                 {
                                     if (accountMap.TryGetValue(accountId, out var account))
                                     {
-                                        emailHandler.SendEmail(
-                                            $"Manga {manga.Title} has new chapters",
-                                            $"{manga.Title} has {updated.pulishedChapterCount - old.pulishedChapterCount} new chapters",
-                                            account.email,
-                                            this
-                                        );
+                                        if (updatedMangaMap.ContainsKey(account.email))
+                                        {
+                                            updatedMangaMap[account.email].Add(manga.Title);
+                                        }
+                                        else
+                                        {
+                                            updatedMangaMap.Add(account.email, new List<string> { manga.Title });
+                                        }
                                     }
                                 }
                             }
@@ -375,6 +379,63 @@ public class MangaAPI
 
         oldCachedManga.Clear();
         Log(LogLevel.info, "Completed Check for Updated Chapters Proccess");
+
+        Log(LogLevel.info, "Sending Update Emails");
+        foreach (string email in updatedMangaMap.Keys)
+        {
+            SendNewChaptersEmail(email, updatedMangaMap[email]);
+        }
+        Log(LogLevel.info, "Finished Sending Update Emails");
+    }
+
+    public void SendNewChaptersEmail(string recipientEmail, List<string> mangaList)
+    {
+        if (File.Exists(configPath))
+        {
+            try
+            {
+                Config confg = JsonHandler.DeserializeJsonFile<Config>(configPath);
+
+                string senderEmail = confg.fromEmail;
+                string appPassword = confg.googleAPPpass;
+
+                Log(LogLevel.info, $"Sending new chapters email from {senderEmail} to {recipientEmail}");
+
+                var smtp = new SmtpClient("smtp.gmail.com", 587)
+                {
+                    Credentials = new NetworkCredential(senderEmail, appPassword),
+                    EnableSsl = true
+                };
+
+                string mangaHtmlList = "";
+                foreach (var manga in mangaList)
+                {
+                    mangaHtmlList += $"<li>{WebUtility.HtmlEncode(manga)}</li>";
+                }
+
+                string htmlBody = $"<html>\r\n<body style='font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;'>\r\n<div style='max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px;'>\r\n<img src='https://chinatsuservices.ddns.net/MainStaticImages/MainLogo.png' alt='Logo' style='max-width: 150px; display: block; margin: 0 auto 20px;' />\r\n<h2 style='color: #333; text-align: center;'>New Manga Chapters Released!</h2>\r\n<p>Hi there! The following manga have new chapters available:</p>\r\n<ul>\r\n{mangaHtmlList}\r\n</ul>\r\n<p>Check them out in your library now!</p>\r\n<p style='font-size: 0.9em; color: #666;'>You are receiving this email because you subscribed to notifications for manga updates.</p>\r\n</div>\r\n</body>\r\n</html>";
+
+                var mail = new MailMessage
+                {
+                    From = new MailAddress(senderEmail, "Chinatsuservices"),
+                    Subject = "New Manga Chapters Available!",
+                    Body = htmlBody,
+                    IsBodyHtml = true
+                };
+
+                mail.To.Add(recipientEmail);
+
+                smtp.Send(mail);
+            }
+            catch (Exception ex)
+            {
+                Log(LogLevel.error ,"Email failed: " + ex.Message);
+            }
+        }
+        else
+        {
+            Console.WriteLine("Config file not found.");
+        }
     }
 
     public void BackupDir()
@@ -996,8 +1057,7 @@ public class Config
     public string backupSourceDir = "";
     public string backupDestinationDir = "";
     public string fromEmail = "";
-    public string emailPassword = "";
-    public string smtpServer = "";
+    public string googleAPPpass = "";
     public int smtpPort = 25;
     public int cacheExpireDays = 10; // days after which cache expires
 
@@ -1012,8 +1072,7 @@ public class Config
         backupSourceDir = "";
         backupDestinationDir = "";
         fromEmail = "";
-        emailPassword = "";
-        smtpServer = "";
+        googleAPPpass = "";
         smtpPort = 25;
         cacheExpireDays = 10;
     }
