@@ -65,6 +65,11 @@ public class MangaAPI
             BackupDir();
             lastAPIRefershTime = DateTime.Now;
 
+            if (oldCachedManga.Count > 0)
+            {
+                CheckForUpdatedChapeters();
+            }
+
             Main.runningAPICount--;
         }
         catch (Exception e)
