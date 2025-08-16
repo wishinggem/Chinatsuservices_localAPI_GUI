@@ -37,6 +37,9 @@ namespace Chinatsuservices_localAPI_GUI
             Rebuld_Config = new Button();
             Open_Config = new Button();
             TimeTillNextCall = new Label();
+            Open_Cache = new Button();
+            Open_Manga_Storage = new Button();
+            Open_Current_Log = new Button();
             SuspendLayout();
             // 
             // OutputConsole
@@ -91,7 +94,7 @@ namespace Chinatsuservices_localAPI_GUI
             // 
             // Open_Config
             // 
-            Open_Config.Location = new Point(189, 390);
+            Open_Config.Location = new Point(13, 419);
             Open_Config.Name = "Open_Config";
             Open_Config.Size = new Size(137, 23);
             Open_Config.TabIndex = 7;
@@ -108,11 +111,44 @@ namespace Chinatsuservices_localAPI_GUI
             TimeTillNextCall.TabIndex = 8;
             TimeTillNextCall.Text = "Time till next Auto API Run: ";
             // 
+            // Open_Cache
+            // 
+            Open_Cache.Location = new Point(189, 390);
+            Open_Cache.Name = "Open_Cache";
+            Open_Cache.Size = new Size(85, 23);
+            Open_Cache.TabIndex = 9;
+            Open_Cache.Text = "Open Cache";
+            Open_Cache.UseVisualStyleBackColor = true;
+            Open_Cache.Click += Open_Cache_Click;
+            // 
+            // Open_Manga_Storage
+            // 
+            Open_Manga_Storage.Location = new Point(280, 390);
+            Open_Manga_Storage.Name = "Open_Manga_Storage";
+            Open_Manga_Storage.Size = new Size(130, 23);
+            Open_Manga_Storage.TabIndex = 10;
+            Open_Manga_Storage.Text = "Open Manga Storage";
+            Open_Manga_Storage.UseVisualStyleBackColor = true;
+            Open_Manga_Storage.Click += Open_Manga_Storage_Click;
+            // 
+            // Open_Current_Log
+            // 
+            Open_Current_Log.Location = new Point(189, 419);
+            Open_Current_Log.Name = "Open_Current_Log";
+            Open_Current_Log.Size = new Size(111, 23);
+            Open_Current_Log.TabIndex = 11;
+            Open_Current_Log.Text = "Open Current Log";
+            Open_Current_Log.UseVisualStyleBackColor = true;
+            Open_Current_Log.Click += Open_Current_Log_Click;
+            // 
             // Main
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(714, 424);
+            ClientSize = new Size(714, 449);
+            Controls.Add(Open_Current_Log);
+            Controls.Add(Open_Manga_Storage);
+            Controls.Add(Open_Cache);
             Controls.Add(TimeTillNextCall);
             Controls.Add(Open_Config);
             Controls.Add(Rebuld_Config);
@@ -177,5 +213,8 @@ namespace Chinatsuservices_localAPI_GUI
         }
 
         private Label TimeTillNextCall;
+        private Button Open_Cache;
+        private Button Open_Manga_Storage;
+        private Button Open_Current_Log;
     }
 }

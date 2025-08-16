@@ -174,6 +174,42 @@ namespace Chinatsuservices_localAPI_GUI
         {
             proccessBar.ForeColor = Color.FromArgb(47, 41, 237);
         }
+
+        private void Open_Cache_Click(object sender, EventArgs e)
+        {
+            Process proc = new Process();
+            proc.StartInfo = new ProcessStartInfo
+            {
+                UseShellExecute = true,
+                FileName = MangaAPI.cachePathStatic,
+            };
+
+            proc.Start();
+        }
+
+        private void Open_Current_Log_Click(object sender, EventArgs e)
+        {
+            Process proc = new Process();
+            proc.StartInfo = new ProcessStartInfo
+            {
+                UseShellExecute = true,
+                FileName = MangaAPI.CurrentLogPath,
+            };
+
+            proc.Start();
+        }
+
+        private void Open_Manga_Storage_Click(object sender, EventArgs e)
+        {
+            Process proc = new Process();
+            proc.StartInfo = new ProcessStartInfo
+            {
+                UseShellExecute = true,
+                FileName = MangaAPI.mangaStoragePath,
+            };
+
+            proc.Start();
+        }
     }
 
     public static class Output

@@ -42,6 +42,10 @@ public class MangaAPI
     private int apiRefreshTime;
     private int cacheExpireTime;
 
+    public static string CurrentLogPath;
+    public static string cachePathStatic;
+    public static string mangaStoragePath;
+
     private DateTime lastPullFromMangaAPI;
     private DateTime lastAPIRefershTime;
 
@@ -533,6 +537,8 @@ public class MangaAPI
             rateLimitTimeout = config.rateLimitTimeout;
             apiRefreshTime = config.apiRefreshTime;
             cacheExpireTime = config.cacheExpireDays;
+            cachePathStatic = cachePath;
+            mangaStoragePath = mangaRootStoragePath;
             Log(LogLevel.info, "Config Data:");
             Log(LogLevel.info, $"   Cache Expires after {cacheExpireTime} days");
             Log(LogLevel.info, $"   API Root Path: {APIRootPath}");
@@ -835,6 +841,8 @@ public class MangaAPI
 
         currentLogFile = logPath;
 
+        CurrentLogPath = logPath;
+
         try
         {
             if (File.Exists(disposableLogFile))
@@ -936,47 +944,6 @@ public class MangaAPI
         else
         {
             Log(LogLevel.error, "Config data does not exist, cannot reset");
-        }
-    }
-}
-
-public class EmailHandler
-{
-    private int smtpPort;
-    private string smtpServer;
-    private string fromEmail;
-    private string password;
-
-    public EmailHandler(string IsmtpServer, int IsmtpPort, string IfromEmail, string Ipassword)
-    {
-        smtpServer = IsmtpServer;
-        smtpPort = IsmtpPort;
-        fromEmail = IfromEmail;
-        password = Ipassword;
-    }
-
-    public void SendEmail(string subject, string body, string toEmail, MangaAPI api)
-    {
-        // Implement email sending logic here
-        // This is a placeholder for the actual email sending code
-        api.Log(MangaAPI.LogLevel.info, $"Sending email to {toEmail}");
-        using (var message = new MailMessage(fromEmail, toEmail))
-        {
-            message.Subject = subject;
-            message.Body = body;
-            message.IsBodyHtml = false; // set true if using HTML
-
-            using (var client = new SmtpClient(smtpServer, smtpPort))
-            {
-                client.EnableSsl = false; // STARTTLS on port 587
-                client.Credentials = new NetworkCredential(fromEmail, password);
-
-                // Optional: Timeout
-                client.Timeout = 15000; // 15 seconds
-
-                client.Send(message);
-                api.Log(MangaAPI.LogLevel.info, $"Email Sent Succesffuly");
-            }
         }
     }
 }
