@@ -365,13 +365,16 @@ public class MangaAPI
                                 {
                                     if (accountMap.TryGetValue(accountId, out var account))
                                     {
-                                        if (updatedMangaMap.ContainsKey(account.email))
+                                        if (account.sendUpdates)
                                         {
-                                            updatedMangaMap[account.email].Add(manga.Title);
-                                        }
-                                        else
-                                        {
-                                            updatedMangaMap.Add(account.email, new List<string> { manga.Title });
+                                            if (updatedMangaMap.ContainsKey(account.email))
+                                            {
+                                                updatedMangaMap[account.email].Add(manga.Title);
+                                            }
+                                            else
+                                            {
+                                                updatedMangaMap.Add(account.email, new List<string> { manga.Title });
+                                            }
                                         }
                                     }
                                 }
@@ -539,6 +542,7 @@ public class MangaAPI
             Log(LogLevel.info, $"   Accounts Path: {accountsPath}");
             Log(LogLevel.info, $"   Cover Root Path: {coverRootPath}");
             Log(LogLevel.info, $"   Cache Path: {cachePath}");
+            Log(LogLevel.info, $"   Sender Email: {config.fromEmail}");
         }
         else
         {
@@ -1048,6 +1052,7 @@ public class Account
     public string userName;
     public string password;
     public string salt;
+    public bool sendUpdates;
 }
 
 [Serializable]
