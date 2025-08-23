@@ -483,7 +483,7 @@ public class MangaAPI
         {
             var targetPath = destFull + entryPath.Substring(sourceFull.Length);
 
-            Log(LogLevel.info, $"   | Backing Up: {targetPath}");
+            Log(LogLevel.info, $"   | Backing Up: {entryPath} -- To -- {targetPath}");
 
             if (Directory.Exists(entryPath))
             {
