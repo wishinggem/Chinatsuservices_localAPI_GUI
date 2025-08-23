@@ -40,6 +40,7 @@ namespace Chinatsuservices_localAPI_GUI
             Open_Cache = new Button();
             Open_Manga_Storage = new Button();
             Open_Current_Log = new Button();
+            Open_Backup = new Button();
             SuspendLayout();
             // 
             // OutputConsole
@@ -141,11 +142,22 @@ namespace Chinatsuservices_localAPI_GUI
             Open_Current_Log.UseVisualStyleBackColor = true;
             Open_Current_Log.Click += Open_Current_Log_Click;
             // 
+            // Open_Backup
+            // 
+            Open_Backup.Location = new Point(306, 419);
+            Open_Backup.Name = "Open_Backup";
+            Open_Backup.Size = new Size(104, 23);
+            Open_Backup.TabIndex = 12;
+            Open_Backup.Text = "Open Backup";
+            Open_Backup.UseVisualStyleBackColor = true;
+            Open_Backup.Click += Open_Backup_Click;
+            // 
             // Main
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(714, 449);
+            Controls.Add(Open_Backup);
             Controls.Add(Open_Current_Log);
             Controls.Add(Open_Manga_Storage);
             Controls.Add(Open_Cache);
@@ -216,5 +228,6 @@ namespace Chinatsuservices_localAPI_GUI
         private Button Open_Cache;
         private Button Open_Manga_Storage;
         private Button Open_Current_Log;
+        private Button Open_Backup;
     }
 }

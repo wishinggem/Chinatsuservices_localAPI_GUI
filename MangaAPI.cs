@@ -45,6 +45,7 @@ public class MangaAPI
     public static string CurrentLogPath;
     public static string cachePathStatic;
     public static string mangaStoragePath;
+    public static string backupStoragePath;
 
     private DateTime lastPullFromMangaAPI;
     private DateTime lastAPIRefershTime;
@@ -453,6 +454,7 @@ public class MangaAPI
     public void BackupDir()
     {
         Log(LogLevel.info, "Starting backup proccess");
+        Log(LogLevel.info, $"══════════════════════════════════════════════════");
 
         Config config = JsonHandler.DeserializeJsonFile<Config>(configPath);
 
@@ -481,6 +483,8 @@ public class MangaAPI
         {
             var targetPath = destFull + entryPath.Substring(sourceFull.Length);
 
+            Log(LogLevel.info, $"   | Backing Up: {targetPath}");
+
             if (Directory.Exists(entryPath))
             {
                 // Create directory if needed.
@@ -499,7 +503,7 @@ public class MangaAPI
 
             proccessBar.Value++;
         }
-
+        Log(LogLevel.info, $"══════════════════════════════════════════════════");
         Log(LogLevel.info, "Backup Proccess Finished");
     }
 
@@ -539,6 +543,7 @@ public class MangaAPI
             cacheExpireTime = config.cacheExpireDays;
             cachePathStatic = cachePath;
             mangaStoragePath = mangaRootStoragePath;
+            backupStoragePath = config.backupDestinationDir;
             Log(LogLevel.info, "Config Data:");
             Log(LogLevel.info, $"   Cache Expires after {cacheExpireTime} days");
             Log(LogLevel.info, $"   API Root Path: {APIRootPath}");

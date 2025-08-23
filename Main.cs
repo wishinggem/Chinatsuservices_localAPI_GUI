@@ -210,6 +210,18 @@ namespace Chinatsuservices_localAPI_GUI
 
             proc.Start();
         }
+
+        private void Open_Backup_Click(object sender, EventArgs e)
+        {
+            Process proc = new Process();
+            proc.StartInfo = new ProcessStartInfo
+            {
+                UseShellExecute = true,
+                FileName = MangaAPI.backupStoragePath,
+            };
+
+            proc.Start();
+        }
     }
 
     public static class Output
