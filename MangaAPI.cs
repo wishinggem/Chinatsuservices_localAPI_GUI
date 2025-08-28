@@ -370,7 +370,7 @@ public class MangaAPI
                                 {
                                     if (accountMap.TryGetValue(accountId, out var account))
                                     {
-                                        if (account.sendUpdates)
+                                        if (account.sendUpdates && manga.Status != "Onhold" && manga.Status != "Dropped")
                                         {
                                             if (updatedMangaMap.ContainsKey(account.email))
                                             {
