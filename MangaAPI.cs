@@ -350,7 +350,7 @@ public class MangaAPI
         var libraryToAccountMap = link.GroupBy(kvp => kvp.Value)
                                       .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key).ToList());
 
-        Dictionary<string, List<string>> updatedMangaMap = new Dictionary<string, List<string>>(); //account email, manga titles
+        Dictionary<string, List<MangaEntry>> updatedMangaMap = new Dictionary<string, List<MangaEntry>>(); //account email, manga titles
 
         foreach (var old in oldCachedManga)
         {
@@ -374,11 +374,11 @@ public class MangaAPI
                                         {
                                             if (updatedMangaMap.ContainsKey(account.email))
                                             {
-                                                updatedMangaMap[account.email].Add(manga.Title);
+                                                updatedMangaMap[account.email].Add(manga);
                                             }
                                             else
                                             {
-                                                updatedMangaMap.Add(account.email, new List<string> { manga.Title });
+                                                updatedMangaMap.Add(account.email, new List<MangaEntry> { manga });
                                             }
                                         }
                                     }
@@ -401,7 +401,7 @@ public class MangaAPI
         Log(LogLevel.info, "Finished Sending Update Emails");
     }
 
-    public void SendNewChaptersEmail(string recipientEmail, List<string> mangaList)
+    public void SendNewChaptersEmail(string recipientEmail, List<MangaEntry> mangaList)
     {
         if (File.Exists(configPath))
         {
@@ -423,7 +423,29 @@ public class MangaAPI
                 string mangaHtmlList = "";
                 foreach (var manga in mangaList)
                 {
-                    mangaHtmlList += $"<li>{WebUtility.HtmlEncode(manga)}</li>";
+                    string statusIcon = manga.Status switch
+                    {
+                        "Reading" => "📖",
+                        "Read" => "✅",
+                        "PlanToRead" => "📝",
+                        "UpToDate" => "⏳",
+                        _ => "❓" // A fallback icon for any unexpected status
+                    };
+
+                    mangaHtmlList += $@"
+                        <li style='margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; display: flex; flex-direction: column;'>
+                            <div style='display: flex; justify-content: space-between; align-items: center;'>
+                                <a href='{WebUtility.HtmlEncode(manga.Link)}' style='text-decoration: none; color: #007BFF; font-size: 1.1em; font-weight: bold;'>
+                                    {WebUtility.HtmlEncode(manga.Title)}
+                                </a>
+                                <span style='font-size: 1.1em;'>
+                                    {statusIcon} {WebUtility.HtmlEncode(manga.Status)}
+                                </span>
+                            </div>
+                            <div style='font-size: 0.8em; color: #666; margin-top: 5px;'>
+                                Chapters Read: {WebUtility.HtmlEncode(manga.chaptersRead.ToString())}
+                            </div>
+                        </li>";
                 }
 
                 string htmlBody = $"<html>\r\n<body style='font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;'>\r\n<div style='max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px;'>\r\n<img src='https://chinatsuservices.ddns.net/MainStaticImages/MainLogo.png' alt='Logo' style='max-width: 150px; display: block; margin: 0 auto 20px;' />\r\n<h2 style='color: #333; text-align: center;'>New Manga Chapters Released!</h2>\r\n<p>Hi there! The following manga have new chapters available:</p>\r\n<ul>\r\n{mangaHtmlList}\r\n</ul>\r\n<p>Check them out in your library now!</p>\r\n<p style='font-size: 0.9em; color: #666;'>You are receiving this email because you subscribed to notifications for manga updates.</p>\r\n</div>\r\n</body>\r\n</html>";
