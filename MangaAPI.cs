@@ -420,35 +420,73 @@ public class MangaAPI
                     EnableSsl = true
                 };
 
+                CachedMangaCollection loadedCache = null;
+
+                if (File.Exists(cachePath))
+                {
+                    loadedCache = JsonHandler.DeserializeJsonFile<CachedMangaCollection>(cachePath);
+                }
+
                 string mangaHtmlList = "";
                 foreach (var manga in mangaList)
                 {
-                    string statusIcon = manga.Status switch
+                    CachedManga cachedManga = null;
+
+                    string newAmountofChapters = "";
+                    string publicationStatus = "";
+                    string altTitle = "";
+
+                    if (loadedCache != null) 
+                    { 
+                        if (loadedCache.cache.ContainsKey(ExtractMangaIdFromUrl(manga.Link)))
+                        {
+                            cachedManga = loadedCache.cache[ExtractMangaIdFromUrl(manga.Link)];
+                        }
+                    }
+
+                    if (cachedManga != null)
                     {
-                        "Reading" => "📖",
-                        "Read" => "✅",
-                        "PlanToRead" => "📝",
-                        "UpToDate" => "⏳",
-                        _ => "❓" // A fallback icon for any unexpected status
+                        newAmountofChapters = cachedManga.pulishedChapterCount.ToString();
+                        publicationStatus = cachedManga.publicationStatus;
+                        altTitle = cachedManga.altTitle;
+                    }
+                    else
+                    {
+                        newAmountofChapters = "Unknowm";
+                        publicationStatus = "Unknowm";
+                        altTitle = "";
+                    }
+
+                    string statusColor = publicationStatus.ToLower() switch
+                    {
+                        "ongoing" => "green",
+                        "completed" => "blue",
+                        "hiatus" => "red",
+                        _ => "gray"
                     };
 
                     mangaHtmlList += $@"
                         <li style='margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; display: flex; flex-direction: column;'>
                             <div style='display: flex; justify-content: space-between; align-items: center;'>
-                                <a href='{WebUtility.HtmlEncode(manga.Link)}' style='text-decoration: none; color: #007BFF; font-size: 1.1em; font-weight: bold;'>
-                                    {WebUtility.HtmlEncode(manga.Title)}
-                                </a>
-                                <span style='font-size: 1.1em;'>
-                                    {statusIcon} {WebUtility.HtmlEncode(manga.Status)}
+                                <div style='display: flex; flex-direction: column;'>
+                                    <a href='{WebUtility.HtmlEncode(manga.Link)}' style='text-decoration: none; color: #007BFF; font-size: 1.1em; font-weight: bold;'>
+                                        {WebUtility.HtmlEncode(manga.Title)}
+                                    </a>
+                                    <p style='font-size: 0.9em; color: #555; margin: 0; padding: 0;'>
+                                        {WebUtility.HtmlEncode(altTitle)}
+                                    </p>
+                                </div>
+                                <span style='font-size: 0.9em; font-weight: bold; color: {statusColor};'>
+                                    {WebUtility.HtmlEncode(publicationStatus)}
                                 </span>
                             </div>
                             <div style='font-size: 0.8em; color: #666; margin-top: 5px;'>
-                                Chapters Read: {WebUtility.HtmlEncode(manga.chaptersRead.ToString())}
+                                Published Chapters: {WebUtility.HtmlEncode(newAmountofChapters)}
                             </div>
                         </li>";
                 }
 
-                string htmlBody = $"<html>\r\n<body style='font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;'>\r\n<div style='max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px;'>\r\n<img src='https://chinatsuservices.ddns.net/MainStaticImages/MainLogo.png' alt='Logo' style='max-width: 150px; display: block; margin: 0 auto 20px;' />\r\n<h2 style='color: #333; text-align: center;'>New Manga Chapters Released!</h2>\r\n<p>Hi there! The following manga have new chapters available:</p>\r\n<ul>\r\n{mangaHtmlList}\r\n</ul>\r\n<p>Check them out in your library now!</p>\r\n<p style='font-size: 0.9em; color: #666;'>You are receiving this email because you subscribed to notifications for manga updates.</p>\r\n</div>\r\n</body>\r\n</html>";
+                string htmlBody = $"<html>\r\n<body style='font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;'>\r\n<div style='max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px;'>\r\n<img src='https://chinatsuservices.ddns.net/MainStaticImages/MainLogo.png' alt='Logo' style='max-width: 150px; display: block; margin: 0 auto 20px;' />\r\n<h2 style='color: #333; text-align: center;'>New Manga Chapters Released!</h2>\r\n<p>Hi there! The following manga have new chapters available:</p>\r\n<ul>\r\n{mangaHtmlList}\r\n</ul>\r\n<p><a href='https://chinatsuservices.ddns.net/Tools/Libraries/MangaLibrary'>Check them out in your library now!</a></p>\r\n<p style='font-size: 0.9em; color: #666;'>You are receiving this email because you subscribed to notifications for manga updates.</p>\r\n</div>\r\n</body>\r\n</html>";
 
                 var mail = new MailMessage
                 {
