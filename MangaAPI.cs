@@ -435,6 +435,7 @@ public class MangaAPI
                     string newAmountofChapters = "";
                     string publicationStatus = "";
                     string altTitle = "";
+                    string readChapters = "";
 
                     if (loadedCache != null) 
                     { 
@@ -466,27 +467,128 @@ public class MangaAPI
                     };
 
                     mangaHtmlList += $@"
-                        <li style='margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; display: flex; flex-direction: column;'>
-                            <div style='display: flex; justify-content: space-between; align-items: center;'>
-                                <div style='display: flex; flex-direction: column;'>
-                                    <a href='{WebUtility.HtmlEncode(manga.Link)}' style='text-decoration: none; color: #007BFF; font-size: 1.1em; font-weight: bold;'>
+                        <li class='manga-item'>
+                            <div class='manga-header'>
+                                <div class='manga-details'>
+                                    <a href='{WebUtility.HtmlEncode(manga.Link)}' class='manga-title'>
                                         {WebUtility.HtmlEncode(manga.Title)}
                                     </a>
-                                    <p style='font-size: 0.9em; color: #555; margin: 0; padding: 0;'>
+                                    <p class='manga-alt-title'>
                                         {WebUtility.HtmlEncode(altTitle)}
                                     </p>
                                 </div>
-                                <span style='font-size: 0.9em; font-weight: bold; color: {statusColor};'>
+                                <span class='status' style='color: {statusColor};'>
                                     {WebUtility.HtmlEncode(publicationStatus)}
                                 </span>
                             </div>
-                            <div style='font-size: 0.8em; color: #666; margin-top: 5px;'>
-                                Published Chapters: {WebUtility.HtmlEncode(newAmountofChapters)}
+                            <div class='chapter-info'>
+                                Read / Published Chapters: {WebUtility.HtmlEncode(manga.chaptersRead.ToString())} / {WebUtility.HtmlEncode(newAmountofChapters)}
                             </div>
                         </li>";
                 }
 
-                string htmlBody = $"<html>\r\n<body style='font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;'>\r\n<div style='max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px;'>\r\n<img src='https://chinatsuservices.ddns.net/MainStaticImages/MainLogo.png' alt='Logo' style='max-width: 150px; display: block; margin: 0 auto 20px;' />\r\n<h2 style='color: #333; text-align: center;'>New Manga Chapters Released!</h2>\r\n<p>Hi there! The following manga have new chapters available:</p>\r\n<ul>\r\n{mangaHtmlList}\r\n</ul>\r\n<p><a href='https://chinatsuservices.ddns.net/Tools/Libraries/MangaLibrary'>Check them out in your library now!</a></p>\r\n<p style='font-size: 0.9em; color: #666;'>You are receiving this email because you subscribed to notifications for manga updates.</p>\r\n</div>\r\n</body>\r\n</html>";
+                string htmlBody = $@"
+                    <html>
+                    <head>
+                        <title>New Manga Chapters</title>
+                        <style>
+                            body {{
+                                font-family: Arial, sans-serif;
+                                background-color: #f4f4f4;
+                                padding: 20px;
+                                margin: 0;
+                            }}
+                            .container {{
+                                max-width: 600px;
+                                margin: auto;
+                                background: white;
+                                padding: 20px;
+                                border-radius: 10px;
+                                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                            }}
+                            .logo {{
+                                max-width: 150px;
+                                display: block;
+                                margin: 0 auto 20px;
+                            }}
+                            .main-heading {{
+                                color: #333;
+                                text-align: center;
+                            }}
+                            .manga-list {{
+                                list-style-type: none;
+                                padding: 0;
+                                margin: 0;
+                            }}
+                            .manga-item {{
+                                margin-bottom: 15px;
+                                border-bottom: 1px solid #eee;
+                                padding-bottom: 10px;
+                                display: flex;
+                                flex-direction: column;
+                            }}
+                            .manga-header {{
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                            }}
+                            .manga-details {{
+                                display: flex;
+                                flex-direction: column;
+                            }}
+                            .manga-title {{
+                                text-decoration: none;
+                                color: #007BFF;
+                                font-size: 1.1em;
+                                font-weight: bold;
+                            }}
+                            .manga-alt-title {{
+                                font-size: 0.9em;
+                                color: #555;
+                                margin: 0;
+                                padding: 0;
+                            }}
+                            .status {{
+                                font-size: 0.9em;
+                                font-weight: bold;
+                            }}
+                            .chapter-info {{
+                                font-size: 0.8em;
+                                color: #666;
+                                margin-top: 5px;
+                            }}
+                            .cta-button {{
+                                display: block;
+                                text-align: center;
+                                margin-top: 20px;
+                                padding: 10px;
+                                background-color: #007BFF;
+                                color: white;
+                                text-decoration: none;
+                                border-radius: 5px;
+                                font-weight: bold;
+                            }}
+                            .footer-text {{
+                                font-size: 0.9em;
+                                color: #666;
+                                text-align: center;
+                                margin-top: 30px;
+                            }}
+                        </style>
+                    </head>
+                    <body style='font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;'>
+                        <div class='container'>
+                            <img class='logo' src='https://chinatsuservices.ddns.net/MainStaticImages/MainLogo.png' alt='Logo' />
+                            <h2 class='main-heading'>New Manga Chapters Released!</h2>
+                            <p>Hi there! The following manga have new chapters available:</p>
+                            <ul class='manga-list'>
+                                {mangaHtmlList}
+                            </ul>
+                            <p><a href='https://chinatsuservices.ddns.net/Tools/Libraries/MangaLibrary' class='cta-button'>Check them out in your library now!</a></p>
+                            <p class='footer-text'>You are receiving this email because you subscribed to notifications for manga updates.</p>
+                        </div>
+                    </body>
+                    </html>";
 
                 var mail = new MailMessage
                 {
