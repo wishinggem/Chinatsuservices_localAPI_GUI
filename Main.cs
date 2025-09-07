@@ -24,6 +24,12 @@ namespace Chinatsuservices_localAPI_GUI
             RoundControl(OutputConsole, 10);
             RoundControl(Rebuld_Config, 10);
             RoundControl(Open_Config, 10);
+            RoundControl(Open_Cache, 10);
+            RoundControl(Open_Current_Log, 10);
+            RoundControl(Open_Manga_Storage, 10);
+            RoundControl(Open_Backup, 10);
+            RoundControl(clearWindow, 10);
+            RoundControl(Update_Cache, 10);
 
             Output.outputConsole = OutputConsole;
             proccessBar.Minimum = 0;
@@ -221,6 +227,11 @@ namespace Chinatsuservices_localAPI_GUI
             };
 
             proc.Start();
+        }
+
+        private void clearWindow_Click(object sender, EventArgs e)
+        {
+            OutputConsole.Clear();
         }
     }
 
