@@ -29,7 +29,6 @@ namespace Chinatsuservices_localAPI_GUI
             RoundControl(Open_Manga_Storage, 10);
             RoundControl(Open_Backup, 10);
             RoundControl(clearWindow, 10);
-            RoundControl(Update_Cache, 10);
 
             Output.outputConsole = OutputConsole;
             proccessBar.Minimum = 0;
