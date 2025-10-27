@@ -94,12 +94,20 @@ namespace Chinatsuservices_localAPI_GUI
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
 
+            int apiRunCountScreenLimit = 0;
+
             Task.Run(async () =>
             {
                 while (!token.IsCancellationRequested)
                 {
                     try
                     {
+                        if (apiRunCountScreenLimit > 10)
+                        {
+                            apiRunCountScreenLimit = 0;
+                            OutputConsole.Clear();
+                        }
+
                         // Reset progress bar safely on UI thread
                         Invoke((Action)(() =>
                         {
@@ -114,6 +122,7 @@ namespace Chinatsuservices_localAPI_GUI
                         api.Log(MangaAPI.LogLevel.info, $"");
                         await api.Run();
                         api.Log(LogLevel.info, $"Finished All Manga API Proccesses, If all API proccessses are complete the API will now sleep for {api.GetAPISleepAmount() / 60000} minutes");
+                        apiRunCountScreenLimit++;
                         ResetCountdown();
                     }
                     catch (Exception error)

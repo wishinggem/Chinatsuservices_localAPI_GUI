@@ -1,12 +1,15 @@
-﻿using Newtonsoft.Json;
+﻿using Chinatsuservices_localAPI_GUI;
+using Microsoft.Data.SqlClient;
+using Microsoft.VisualBasic.ApplicationServices;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
-using System.Net.Mail;
-using System.Text.Json;
-using System.Runtime.InteropServices;
-using System.Text.Json.Serialization;
-using Chinatsuservices_localAPI_GUI;
 using System.Net;
+using System.Net.Mail;
+using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Xml.Linq;
 
 internal class Program
 {
@@ -23,6 +26,7 @@ public class MangaAPI
 {
     private readonly string APIRootPath = "C:\\chinatsuservices_API";
     public static readonly string configPath = "C:\\chinatsuservices_API\\config.json";
+    public static readonly string sqlConfigPath = "C:\\chinatsuservices_API\\sql.json";
 
     private string mangaRootStoragePath = "";
 
@@ -175,22 +179,44 @@ public class MangaAPI
 
         int count = 0;
 
-        if ((DateTime.Now - lastPullFromMangaAPI).TotalMinutes > rateLimitTimeout)
-        {
-            int tempCount = 0;
+        SQLConfig sqlConfig = JsonHandler.DeserializeJsonFile<SQLConfig>(sqlConfigPath);
 
-            foreach (var library in Libraries)
+        if (sqlConfig.useDB)
+        {
+            Log(LogLevel.info, "Using DB for Cache Update");
+
+            List<MangaEntry> allMangaEntries = new List<MangaEntry>();
+
+            string connectionString = $"Server={sqlConfig.IP};Database={sqlConfig.DB_Name};User Id={sqlConfig.username};Password={sqlConfig.password};TrustServerCertificate=True;";
+            using (SqlConnection conn = new(connectionString))
             {
-                tempCount += library.entries.Count;
+                conn.Open();
+
+                string query = "SELECT * FROM Manga";
+                using (SqlCommand cmd = new(query, conn))
+                {
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            allMangaEntries.Add(new MangaEntry
+                            {
+                                Title = reader["Title"].ToString(),
+                                Link = reader["Link"].ToString(),
+                                Status = reader["Status"].ToString(),
+                                chaptersRead = int.Parse(reader["chaptersRead"].ToString()),
+                                favourite = bool.Parse(reader["favourite"].ToString()),
+                            });
+                        }
+                    }
+                }
             }
 
-            proccessBar.Maximum += tempCount;
-
-            if (count <= rateLimit)
+            if ((DateTime.Now - lastPullFromMangaAPI).TotalMinutes > rateLimitTimeout)
             {
-                foreach (var library in Libraries)
+                if (count <= rateLimit)
                 {
-                    foreach (var manga in library.entries)
+                    foreach (var manga in allMangaEntries)
                     {
                         if (!CheckForCache(ExtractMangaIdFromUrl(manga.Link)))
                         {
@@ -324,10 +350,163 @@ public class MangaAPI
                     }
                 }
             }
-            else
+        }
+        else
+        {
+            if ((DateTime.Now - lastPullFromMangaAPI).TotalMinutes > rateLimitTimeout)
             {
-                Log(LogLevel.warning, "Reached Rate Limit, waiting for timeout to continue");
-                lastPullFromMangaAPI = DateTime.Now;
+                int tempCount = 0;
+
+                foreach (var library in Libraries)
+                {
+                    tempCount += library.entries.Count;
+                }
+
+                proccessBar.Maximum += tempCount;
+
+                if (count <= rateLimit)
+                {
+                    foreach (var library in Libraries)
+                    {
+                        foreach (var manga in library.entries)
+                        {
+                            if (!CheckForCache(ExtractMangaIdFromUrl(manga.Link)))
+                            {
+                                Log(LogLevel.info, $"Caching Manga: {ExtractMangaIdFromUrl(manga.Link)}");
+
+                                var timeout = TimeSpan.FromSeconds(10);
+
+                                var mangaTask = Task.Run(async () =>
+                                {
+                                    string coverFilename = "";
+
+                                    //add to cache
+                                    if (File.Exists(cachePath))
+                                    {
+                                        //work from
+                                        bool fail = false;
+
+                                        CachedManga cachedManga = new CachedManga();
+
+                                        coverFilename = await GetMangaCoverUrlAsync(manga);
+
+                                        Log(LogLevel.info, $"Downloading Cover: {$"https://uploads.mangadex.org/covers/{ExtractMangaIdFromUrl(manga.Link)}/{coverFilename}"}");
+
+                                        await DownloadFileAsync($"https://uploads.mangadex.org/covers/{ExtractMangaIdFromUrl(manga.Link)}/{coverFilename}", coverRootPath);
+
+                                        if (!string.IsNullOrEmpty(coverFilename))
+                                        {
+                                            if (port != "")
+                                            {
+                                                cachedManga.coverPhotoPath = $"https://{host}:{port}/Libraries/Manga/Covers/{coverFilename}";
+                                            }
+                                            else
+                                            {
+                                                cachedManga.coverPhotoPath = $"https://{host}/Libraries/Manga/Covers/{coverFilename}";
+                                            }
+                                        }
+                                        else
+                                        {
+                                            fail = true;
+                                        }
+                                        var jsonData = await GetMangaJsonDataAsync(manga.Link);
+                                        if (jsonData == null)
+                                        {
+                                            fail = true;
+                                        }
+                                        manga.MangaJsonData = jsonData;
+                                        cachedManga.altTitle = ExtractAndSetAltTitle(manga);
+                                        cachedManga.genres = ExtractGenresFromJson(manga);
+                                        cachedManga.publicationStatus = ExtractStatusFromJson(manga);
+                                        var publishedCount = await GetAndSetPublishEnglishChapters(manga);
+                                        if (publishedCount == -1)
+                                        {
+                                            fail = true;
+                                            publishedCount = 0;
+                                        }
+                                        cachedManga.pulishedChapterCount = publishedCount;
+                                        cachedManga.dateAdded = DateTime.Now;
+                                        cachedManga.managaId = ExtractMangaIdFromUrl(manga.Link);
+
+                                        if (!fail)
+                                        {
+                                            //add to cache
+                                            CachedMangaCollection cachedMangaCollection = JsonHandler.DeserializeJsonFile<CachedMangaCollection>(cachePath);
+                                            cachedMangaCollection.cache.Add(ExtractMangaIdFromUrl(manga.Link), cachedManga);
+                                            JsonHandler.SerializeJsonFile(cachePath, cachedMangaCollection);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        //create new
+                                        bool fail = false;
+
+                                        CachedManga cachedManga = new CachedManga();
+
+                                        coverFilename = await GetMangaCoverUrlAsync(manga);
+
+                                        Log(LogLevel.info, $"Downloading Cover: {$"https://uploads.mangadex.org/covers/{ExtractMangaIdFromUrl(manga.Link)}/{coverFilename}"}");
+
+                                        await DownloadFileAsync($"https://uploads.mangadex.org/covers/{ExtractMangaIdFromUrl(manga.Link)}/{coverFilename}", coverRootPath);
+
+                                        if (!string.IsNullOrEmpty(coverFilename))
+                                        {
+                                            if (port != "")
+                                            {
+                                                cachedManga.coverPhotoPath = $"https://{host}:{port}/Libraries/Manga/Covers/{coverFilename}";
+                                            }
+                                            else
+                                            {
+                                                cachedManga.coverPhotoPath = $"https://{host}/Libraries/Manga/Covers/{coverFilename}";
+                                            }
+                                        }
+                                        else
+                                        {
+                                            fail = true;
+                                        }
+                                        var jsonData = await GetMangaJsonDataAsync(manga.Link);
+                                        if (jsonData == null)
+                                        {
+                                            fail = true;
+                                        }
+                                        manga.MangaJsonData = jsonData;
+                                        cachedManga.altTitle = ExtractAndSetAltTitle(manga);
+                                        cachedManga.genres = ExtractGenresFromJson(manga);
+                                        cachedManga.publicationStatus = ExtractStatusFromJson(manga);
+                                        var publishedCount = await GetAndSetPublishEnglishChapters(manga);
+                                        if (publishedCount == -1)
+                                        {
+                                            fail = true;
+                                            publishedCount = 0;
+                                        }
+                                        cachedManga.pulishedChapterCount = publishedCount;
+                                        cachedManga.dateAdded = DateTime.Now;
+                                        cachedManga.managaId = ExtractMangaIdFromUrl(manga.Link);
+
+                                        if (!fail)
+                                        {
+                                            //add to cache
+                                            CachedMangaCollection cachedMangaCollection = new CachedMangaCollection();
+                                            cachedMangaCollection.cache.Add(ExtractMangaIdFromUrl(manga.Link), cachedManga);
+                                            JsonHandler.SerializeJsonFile(cachePath, cachedMangaCollection);
+                                        }
+                                    }
+                                });
+
+                                var completed = await Task.WhenAny(mangaTask, Task.Delay(timeout));
+
+                                count++;
+                            }
+
+                            proccessBar.Value++;
+                        }
+                    }
+                }
+                else
+                {
+                    Log(LogLevel.warning, "Reached Rate Limit, waiting for timeout to continue");
+                    lastPullFromMangaAPI = DateTime.Now;
+                }
             }
         }
 
@@ -1221,6 +1400,16 @@ public class Config
         cacheExpireDays = 10;
     }
 
+}
+
+[Serializable]
+public class SQLConfig
+{
+    public bool useDB = false;
+    public string IP = "";
+    public string DB_Name = "";
+    public string username = "";
+    public string password = "";
 }
 
 public static class JsonHandler
