@@ -10,6 +10,8 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
+using System.Data;
+using System.Data.SqlClient;
 
 internal class Program
 {
@@ -533,6 +535,7 @@ public class MangaAPI
 
         foreach (var old in oldCachedManga)
         {
+            //redundant check for testing new sql checking
             if (cache.TryGetValue(old.managaId, out var updated) &&
                 updated.pulishedChapterCount > old.pulishedChapterCount)
             {
@@ -569,15 +572,215 @@ public class MangaAPI
             }
         }
 
-        oldCachedManga.Clear();
         Log(LogLevel.info, "Completed Check for Updated Chapters Proccess");
 
         Log(LogLevel.info, "Sending Update Emails");
         foreach (string email in updatedMangaMap.Keys)
         {
-            SendNewChaptersEmail(email, updatedMangaMap[email]);
+            //SendNewChaptersEmail(email, updatedMangaMap[email]);
+
+            LogSeperateForSQLTest(LogLevel.info, $"would send update email to {email} for {updatedMangaMap[email].Count} manga updates, if using json. should be receiving from sql tho");
+            //add this string to the ./api.log file on linux.
         }
-        Log(LogLevel.info, "Finished Sending Update Emails");
+
+
+        //---------------------------------------------------------
+        // 🔔 This will be the one used for sql check 🔔
+        //---------------------------------------------------------
+
+        cache = JsonHandler.DeserializeJsonFile<CachedMangaCollection>(cachePath).cache;
+        Dictionary<string, List<MangaEntry>> updatedMangaMapSql = new Dictionary<string, List<MangaEntry>>();
+
+        Log(LogLevel.info, "Starting SQL Check for Updated Chapters Proccess");
+
+        // 1. Get ALL relevant user-manga data from the database (replacing file lookups)
+        var userMangaCollection = GetAllActiveUserMangaFromDatabase();
+
+        // 2. Iterate and compare against the 'cache' and 'oldCachedManga' list
+        foreach (var old in oldCachedManga)
+        {
+            // This is the redundant check for testing, comparing old vs. new chapter counts
+            if (cache.TryGetValue(old.managaId, out var updated) &&
+                updated.pulishedChapterCount > old.pulishedChapterCount)
+            {
+                // Now, find all UserMangaEntries that match the updated manga ID
+                var updatedMangaId = updated.managaId;
+
+                // Iterate over the DB results to find which users are tracking this manga
+                foreach (var userManga in userMangaCollection)
+                {
+                    if (ExtractMangaIdFromUrl(userManga.Link) == updatedMangaId)
+                    {
+                        // The SQL query already filters for A.sendUpdates = TRUE and
+                        // M.Status NOT IN ('Onhold', 'Dropped'), but we include the checks 
+                        // for clarity if the SQL was simpler.
+                        // if (userManga.SendUpdates && userManga.Status != "Onhold" && userManga.Status != "Dropped") 
+
+                        // Create the MangaEntry object for the notification email
+                        var mangaEntry = new MangaEntry
+                        {
+                            Title = userManga.Title,
+                            Link = userManga.Link,
+                            // Add any other properties needed for SendNewChaptersEmail
+                        };
+
+                        if (updatedMangaMapSql.ContainsKey(userManga.Email))
+                        {
+                            updatedMangaMapSql[userManga.Email].Add(mangaEntry);
+                        }
+                        else
+                        {
+                            updatedMangaMapSql.Add(userManga.Email, new List<MangaEntry> { mangaEntry });
+                        }
+                    }
+                }
+            }
+        }
+
+        oldCachedManga.Clear(); // <-- Clear the list after the comparison
+        Log(LogLevel.info, "Completed SQL Check for Updated Chapters Proccess");
+
+        Log(LogLevel.info, "Sending Update Emails (via SQL check)");
+        foreach (string email in updatedMangaMapSql.Keys)
+        {
+            LogSeperateForSQLTest(LogLevel.info, $"sending update email to {email} for {updatedMangaMap[email].Count} manga updates using sql. compare with json result");
+            SendNewChaptersEmail(email, updatedMangaMapSql[email]);
+        }
+        Log(LogLevel.info, "Finished Sending Update Emails (via SQL check)");
+    }
+
+    public void LogSeperateForSQLTest(LogLevel lv, string message)
+    {
+        string level = "Info";
+
+        string log = "";
+
+        switch (lv)
+        {
+            case LogLevel.info:
+                level = "Info";
+                Output.WriteColored($"[{DateTime.Now}] ", Color.White);
+                Output.WriteColored($"[{level.ToUpper()}] ", Color.Green);
+                Output.WriteColored($"{message}{Environment.NewLine}", Color.White);
+
+                log += $"[{DateTime.Now}] [{level.ToUpper()}] {message}";
+                break;
+
+            case LogLevel.warning:
+                level = "Warning";
+                Output.WriteColored($"[{DateTime.Now}] ", Color.White);
+                Output.WriteColored($"[{level.ToUpper()}] {message}{Environment.NewLine}", Color.Yellow);
+
+                log += $"[{DateTime.Now}] [{level.ToUpper()}] {message}";
+                break;
+
+            case LogLevel.error:
+                level = "Error";
+                Output.WriteColored($"[{DateTime.Now}] ", Color.White);
+                Output.WriteColored($"[{level.ToUpper()}] {message}{Environment.NewLine}", Color.Red);
+
+                log += $"[{DateTime.Now}] [{level.ToUpper()}] {message}";
+                break;
+
+            case LogLevel.test:
+                level = "Test";
+                Output.WriteColored($"[{DateTime.Now}] ", Color.White);
+                Output.WriteColored($"[{level.ToUpper()}] {message}{Environment.NewLine}", Color.Blue);
+
+                log += $"[{DateTime.Now}] [{level.ToUpper()}] {message}";
+                break;
+        }
+
+        try
+        {
+            if (File.Exists("C:\\chinatsuservices_API\\sqlLog.txt"))
+            {
+                File.AppendAllLines("C:\\chinatsuservices_API\\sqlLog.txt", new[] { log });
+            }
+            else
+            {
+                File.CreateText("C:\\chinatsuservices_API\\sqlLog.txt");
+                File.AppendAllLines("C:\\chinatsuservices_API\\sqlLog.txt", new[] { log });
+            }
+        }
+        catch (Exception e)
+        {
+            if (e.InnerException is IOException && e.Message.Contains("because it is being used by another process"))
+            {
+                Output.WriteLine($"Failed to write log: Due to IOException file is being used by another proccess");
+            }
+            else
+            {
+                Output.WriteLine($"Failed to write log: {e.Message}");
+            }
+        }
+
+        Output.ChangeColor(Color.White);
+    }
+
+
+    private List<UserMangaEntry> GetAllActiveUserMangaFromDatabase()
+    {
+        // 1. **Define your Connection String**
+        // Get this from your configuration file (Config config = ...)
+        string connectionString = "Your_Actual_Database_Connection_String_Here";
+
+        // 2. **Define the SQL Query**
+        // Fetches all necessary data in one efficient call
+        string sqlQuery = @"
+        SELECT
+            M.Title,
+            M.Link,
+            M.chaptersRead,
+            M.Status,
+            A.email,
+            A.sendUpdates
+        FROM
+            Manga M
+        JOIN
+            Accounts A ON M.UserID = A.UserID
+        WHERE
+            A.sendUpdates = 1 -- Use 1 for TRUE/Boolean logic in SQL
+            AND M.Status NOT IN ('Onhold', 'Dropped');";
+
+        List<UserMangaEntry> userMangaCollection = new List<UserMangaEntry>();
+
+        try
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                using (SqlCommand command = new SqlCommand(sqlQuery, connection))
+                {
+                    connection.Open();
+
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            userMangaCollection.Add(new UserMangaEntry
+                            {
+                                // Ensure data types and column names match your DB schema
+                                Title = reader["Title"].ToString(),
+                                Link = reader["Link"].ToString(),
+                                ChaptersRead = Convert.ToInt32(reader["chaptersRead"]),
+                                Status = reader["Status"].ToString(),
+                                Email = reader["email"].ToString(),
+                                SendUpdates = Convert.ToBoolean(reader["sendUpdates"])
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Important: Log any database errors that occur
+            Log(LogLevel.error, $"Database error fetching user manga: {ex.Message}");
+            // Depending on your application, you might rethrow the exception or return an empty list
+            return new List<UserMangaEntry>();
+        }
+
+        return userMangaCollection;
     }
 
     public void SendNewChaptersEmail(string recipientEmail, List<MangaEntry> mangaList)
@@ -1292,6 +1495,16 @@ public class MangaAPI
             Log(LogLevel.error, "Config data does not exist, cannot reset");
         }
     }
+}
+
+public class UserMangaEntry
+{
+    public string Title { get; set; }
+    public string Link { get; set; }
+    public int ChaptersRead { get; set; }
+    public string Status { get; set; }
+    public string Email { get; set; }
+    public bool SendUpdates { get; set; }
 }
 
 [Serializable]
