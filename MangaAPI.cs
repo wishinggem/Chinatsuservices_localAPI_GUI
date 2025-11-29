@@ -724,8 +724,7 @@ public class MangaAPI
         // 1. **Define your Connection String**
         // Get this from your configuration file (Config config = ...)
         SQLConfig sqlConfig = JsonHandler.DeserializeJsonFile<SQLConfig>(sqlConfigPath);
-
-        string connectionString = $"Data Source={sqlConfig.IP};Initial Catalog={sqlConfig.DB_Name};User ID={sqlConfig.username};Password={sqlConfig.password};TrustServerCertificate=True;";
+        string connectionString = $"Server={sqlConfig.IP};Database={sqlConfig.DB_Name};User Id={sqlConfig.username};Password={sqlConfig.password};TrustServerCertificate=True;";
 
         // 2. **Define the SQL Query**
         // Fetches all necessary data in one efficient call
