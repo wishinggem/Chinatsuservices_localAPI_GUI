@@ -680,7 +680,6 @@ public class MangaAPI
             }
         }
 
-        oldCachedManga.Clear(); // <-- Clear the list after the comparison
         Log(LogLevel.info, "Completed SQL Check for Updated Chapters Proccess");
 
         Log(LogLevel.info, "Sending Update Emails (via SQL check)");
@@ -689,6 +688,8 @@ public class MangaAPI
             LogSeperateForSQLTest(LogLevel.info, $"sending update email to {email} for {updatedMangaMap[email].Count} manga updates using sql. compare with json result");
             SendNewChaptersEmail(email, updatedMangaMapSql[email]);
         }
+        Log(LogLevel.info, "Clearing Old Cached Managa Lookup");
+        oldCachedManga.Clear(); // <-- Clear the list after the comparison
         Log(LogLevel.info, "Finished Sending Update Emails (via SQL check)");
     }
 
@@ -891,8 +892,35 @@ public class MangaAPI
                         "hiatus" => "red",
                         _ => "gray"
                     };
+                    int oldCachedChapters = 0;
+                    CachedManga matchingEntry = oldCachedManga.FirstOrDefault(a => a.managaId == ExtractMangaIdFromUrl(manga.Link));
 
-                    mangaHtmlList += $@"
+                    if (matchingEntry != null)
+                    {
+                        oldCachedChapters = matchingEntry.pulishedChapterCount;
+                        mangaHtmlList += $@"
+                        <li class='manga-item'>
+                            <div class='manga-header'>
+                                <div class='manga-details'>
+                                    <a href='{WebUtility.HtmlEncode(manga.Link)}' class='manga-title'>
+                                        {WebUtility.HtmlEncode(manga.Title)}
+                                    </a>
+                                    <p class='manga-alt-title'>
+                                        {WebUtility.HtmlEncode(altTitle)}
+                                    </p>
+                                </div>
+                                <span class='status' style='color: {statusColor};'>
+                                    {WebUtility.HtmlEncode(publicationStatus)}
+                                </span>
+                            </div>
+                            <div class='chapter-info'>
+                                Old Chapters / New Chapters: {WebUtility.HtmlEncode(oldCachedChapters.ToString())} / {WebUtility.HtmlEncode(newAmountofChapters)}
+                            </div>
+                        </li>";
+                    }
+                    else
+                    {
+                        mangaHtmlList += $@"
                         <li class='manga-item'>
                             <div class='manga-header'>
                                 <div class='manga-details'>
@@ -911,6 +939,8 @@ public class MangaAPI
                                 Read / Published Chapters: {WebUtility.HtmlEncode(manga.chaptersRead.ToString())} / {WebUtility.HtmlEncode(newAmountofChapters)}
                             </div>
                         </li>";
+                    }
+                    
                 }
 
                 string htmlBody = $@"
