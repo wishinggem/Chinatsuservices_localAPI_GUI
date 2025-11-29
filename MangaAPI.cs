@@ -86,6 +86,8 @@ public class MangaAPI
         catch (Exception e)
         {
             Log(LogLevel.error, $"Failed to run API error: {e.Message}");
+            Log(LogLevel.error, $"Inner Exception: {e.InnerException}");
+            Log(LogLevel.error, $"Stack Trace: {e.StackTrace}");
         }
         Run_API_Button.ForeColor = defaultColor;
     }
@@ -124,7 +126,17 @@ public class MangaAPI
             {
                 Log(LogLevel.error, $"Failed to delete {file}: {ex.Message}");
             }
-            proccessBar.Value++;
+            if (proccessBar.Value >= proccessBar.Maximum)
+            {
+                if (proccessBar.Value < proccessBar.Minimum)
+                {
+                    proccessBar.Value++;
+                }
+            }
+            else
+            {
+                proccessBar.Value = proccessBar.Maximum;
+            }
         }
     }
 
@@ -154,7 +166,17 @@ public class MangaAPI
                 var path = Path.Combine(coverRootPath, Path.GetFileName(new Uri(manga.coverPhotoPath).LocalPath));
                 Log(LogLevel.info, $"Deleting: {path}");
                 File.Delete(path);
-                proccessBar.Value++;
+                if (proccessBar.Value >= proccessBar.Maximum)
+                {
+                    if (proccessBar.Value < proccessBar.Minimum)
+                    {
+                        proccessBar.Value++;
+                    }
+                }
+                else
+                {
+                    proccessBar.Value = proccessBar.Maximum;
+                }
                 count++;
             }
         }
@@ -348,7 +370,17 @@ public class MangaAPI
                             count++;
                         }
 
-                        proccessBar.Value++;
+                        if (proccessBar.Value >= proccessBar.Maximum)
+                        {
+                            if (proccessBar.Value < proccessBar.Minimum)
+                            {
+                                proccessBar.Value++;
+                            }
+                        }
+                        else
+                        {
+                            proccessBar.Value = proccessBar.Maximum;
+                        }
                     }
                 }
             }
@@ -500,7 +532,17 @@ public class MangaAPI
                                 count++;
                             }
 
-                            proccessBar.Value++;
+                            if (proccessBar.Value >= proccessBar.Maximum)
+                            {
+                                if (proccessBar.Value < proccessBar.Minimum)
+                                {
+                                    proccessBar.Value++;
+                                }
+                            }
+                            else
+                            {
+                                proccessBar.Value = proccessBar.Maximum;
+                            }
                         }
                     }
                 }
@@ -1046,7 +1088,17 @@ public class MangaAPI
                 File.Copy(entryPath, targetPath, overwrite: true);
             }
 
-            proccessBar.Value++;
+            if (proccessBar.Value >= proccessBar.Maximum)
+            {
+                if (proccessBar.Value < proccessBar.Minimum)
+                {
+                    proccessBar.Value++;
+                }
+            }
+            else
+            {
+                proccessBar.Value = proccessBar.Maximum;
+            }
         }
         Log(LogLevel.info, $"══════════════════════════════════════════════════");
         Log(LogLevel.info, "Backup Proccess Finished");
