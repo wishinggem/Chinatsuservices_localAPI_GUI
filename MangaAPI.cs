@@ -637,6 +637,7 @@ public class MangaAPI
 
         // 1. Get ALL relevant user-manga data from the database (replacing file lookups)
         var userMangaCollection = GetAllActiveUserMangaFromDatabase();
+        proccessBar.Maximum += userMangaCollection.Count;
 
         // 2. Iterate and compare against the 'cache' and 'oldCachedManga' list
         foreach (var old in oldCachedManga)
