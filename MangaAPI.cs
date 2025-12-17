@@ -916,7 +916,10 @@ public class MangaAPI
                                 </span>
                             </div>
                             <div class='chapter-info'>
-                                Old Chapters / New Chapters: {WebUtility.HtmlEncode(oldCachedChapters.ToString())} / {WebUtility.HtmlEncode(newAmountofChapters)}
+                                Old Chapters -> New Chapters: {WebUtility.HtmlEncode(oldCachedChapters.ToString())} / {WebUtility.HtmlEncode(newAmountofChapters)}
+                            </div>
+                            <div class='chapter-info'>
+                                Read / Published Chapters: {WebUtility.HtmlEncode(manga.chaptersRead.ToString())} / {WebUtility.HtmlEncode(newAmountofChapters)}
                             </div>
                         </li>";
                     }
