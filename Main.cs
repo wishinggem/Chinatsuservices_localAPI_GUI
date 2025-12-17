@@ -14,6 +14,7 @@ namespace Chinatsuservices_localAPI_GUI
         public static int runningAPICount = 0;
         private Timer timeTillNextAPICall;
         private int secondsRemaining = 0;
+        private static bool timerPaused = false;
 
         public Main()
         {
@@ -32,7 +33,7 @@ namespace Chinatsuservices_localAPI_GUI
 
             Output.outputConsole = OutputConsole;
             proccessBar.Minimum = 0;
-
+            timerPaused = false;
             timeTillNextAPICall = new Timer();
             timeTillNextAPICall.Interval = 1000; // Update every second
             timeTillNextAPICall.Tick += Timer_Tick;
@@ -43,17 +44,20 @@ namespace Chinatsuservices_localAPI_GUI
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            if (secondsRemaining > 0)
+            if (!timerPaused)
             {
-                secondsRemaining--;
+                if (secondsRemaining > 0)
+                {
+                    secondsRemaining--;
 
-                int minutes = secondsRemaining / 60;
-                int seconds = secondsRemaining % 60;
-                TimeTillNextCall.Text = $"Time till next auto API Run: {minutes:D2}:{seconds:D2}";
-            }
-            else
-            {
+                    int minutes = secondsRemaining / 60;
+                    int seconds = secondsRemaining % 60;
+                    TimeTillNextCall.Text = $"Time till next auto API Run: {minutes:D2}:{seconds:D2}";
+                }
+                else
+                {
 
+                }
             }
         }
 
@@ -116,14 +120,21 @@ namespace Chinatsuservices_localAPI_GUI
                         }));
 
                         // Your API calls
-                        api.Log(MangaAPI.LogLevel.info, $"");
-                        api.Log(MangaAPI.LogLevel.info,
-                            $"Running Managa API Main, Process ID: {Process.GetCurrentProcess().Id}");
-                        api.Log(MangaAPI.LogLevel.info, $"");
-                        await api.Run();
-                        api.Log(LogLevel.info, $"Finished All Manga API Proccesses, If all API proccessses are complete the API will now sleep for {api.GetAPISleepAmount() / 60000} minutes");
-                        apiRunCountScreenLimit++;
-                        ResetCountdown();
+                        if (timerPaused)
+                        {
+                            api.Log(MangaAPI.LogLevel.warning, $"Time had been pasued, API not running");
+                        }
+                        else
+                        {
+                            api.Log(MangaAPI.LogLevel.info, $"");
+                            api.Log(MangaAPI.LogLevel.info,
+                                $"Running Managa API Main, Process ID: {Process.GetCurrentProcess().Id}");
+                            api.Log(MangaAPI.LogLevel.info, $"");
+                            await api.Run();
+                            api.Log(LogLevel.info, $"Finished All Manga API Proccesses, If all API proccessses are complete the API will now sleep for {api.GetAPISleepAmount() / 60000} minutes");
+                            apiRunCountScreenLimit++;
+                            ResetCountdown();
+                        }
                     }
                     catch (Exception error)
                     {
@@ -240,6 +251,16 @@ namespace Chinatsuservices_localAPI_GUI
         private void clearWindow_Click(object sender, EventArgs e)
         {
             OutputConsole.Clear();
+        }
+
+        public static void PauseTimer()
+        {
+            timerPaused = true;
+        }
+
+        public static void ResumeTimer()
+        {
+            timerPaused = false;
         }
     }
 

@@ -67,6 +67,7 @@ public class MangaAPI
         //every set time run api controller
         try
         {
+            Main.PauseTimer();
             Main.runningAPICount++;
 
             SetupLogData();
@@ -82,6 +83,7 @@ public class MangaAPI
             }
 
             Main.runningAPICount--;
+            Main.ResumeTimer();
         }
         catch (Exception e)
         {

@@ -214,11 +214,18 @@ namespace Chinatsuservices_localAPI_GUI
         {
             if (Main.runningAPICount > 0)
             {
-                var closeWarningMsg = MessageBox.Show("The application cannot currently be closed due to an API proccess currently in operation, Please wait for this operation to finish \n\nIf the application were to be closed this may result in: \n\nPartial OR Full Cache File Corruption, or missing Data", "Error");
+                var closeWarningMsg = MessageBox.Show("The application cannot currently be closed due to an API proccess currently in operation, Please wait for this operation to finish \n\nIf the application were to be closed this may result in: \n\nPartial OR Full Cache File Corruption, or missing Data.\n\nAre you Sure You Want To Continue", "Error", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
-                e.Cancel = true;
-
-                return;
+                if (closeWarningMsg != DialogResult.Yes)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+                else
+                {
+                    e.Cancel = false;
+                    return;
+                }
             }
             else
             {
@@ -231,7 +238,8 @@ namespace Chinatsuservices_localAPI_GUI
                 }
                 else
                 {
-                    
+                    e.Cancel = false;
+                    return;
                 }
             }
         }
