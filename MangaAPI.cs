@@ -1590,7 +1590,7 @@ public class UserMangaEntry
 {
     public string Title { get; set; }
     public string Link { get; set; }
-    public int ChaptersRead { get; set; }
+    public float ChaptersRead { get; set; }
     public string Status { get; set; }
     public string Email { get; set; }
     public bool SendUpdates { get; set; }
@@ -1643,7 +1643,7 @@ public class MangaEntry
     public string Title { get; set; }
     public string Link { get; set; }
     public string Status { get; set; }
-    public int chaptersRead { get; set; } = 0;
+    public float chaptersRead { get; set; } = 0;
     public bool favourite { get; set; } = false;
     [Newtonsoft.Json.JsonIgnore]
     public string CoverImageUrl { get; set; }
