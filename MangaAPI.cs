@@ -230,7 +230,7 @@ public class MangaAPI
                                 Title = reader["Title"].ToString(),
                                 Link = reader["Link"].ToString(),
                                 Status = reader["Status"].ToString(),
-                                chaptersRead = int.Parse(reader["chaptersRead"].ToString()),
+                                chaptersRead = float.Parse(reader["chaptersRead"].ToString()),
                                 favourite = bool.Parse(reader["favourite"].ToString()),
                             });
                         }
