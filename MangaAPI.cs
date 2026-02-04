@@ -666,7 +666,10 @@ public class MangaAPI
                         {
                             Title = userManga.Title,
                             Link = userManga.Link,
-                            // Add any other properties needed for SendNewChaptersEmail
+                            chaptersRead = userManga.ChaptersRead,
+                            Status = userManga.Status,
+                            publicationStatus = updated.publicationStatus,
+                            AltTitle = updated.altTitle
                         };
 
                         if (updatedMangaMapSql.ContainsKey(userManga.Email))
