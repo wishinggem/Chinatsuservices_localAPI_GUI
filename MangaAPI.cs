@@ -67,6 +67,8 @@ public class MangaAPI
             Main.runningAPICount++;
 
             SetupLogData();
+            IdentifyUnassociatedCoverPhotos();
+            VarifyCoverPhotos();
             DeleteExpiredCache();
             await UpdateCache();
             BackupDir();
@@ -133,6 +135,56 @@ public class MangaAPI
             else
             {
                 proccessBar.Value = proccessBar.Maximum;
+            }
+        }
+    }
+
+    private string GetCoverPhotoPath(CachedManga manga)
+    {
+        return Path.Combine(coverRootPath, Path.GetFileName(new Uri(manga.coverPhotoPath).LocalPath));
+    }
+
+    public void VarifyCoverPhotos()
+    {
+        Log(LogLevel.info, $"Started Varification of Cover Photos");
+        var cacheCollection = JsonHandler.DeserializeJsonFile<CachedMangaCollection>(cachePath);
+        var cache = cacheCollection.cache;
+        foreach (var manga in cache.Values)
+        {
+            var coverPath = GetCoverPhotoPath(manga);
+            if (!File.Exists(coverPath))
+            {
+                Log(LogLevel.warning, $"Cover photo missing for {manga.managaId}, expected at {coverPath}");
+                Log(LogLevel.warning, $"Setting cached date to {DateTime.MinValue} to ensure cache retry");
+                manga.dateAdded = DateTime.MinValue;
+            }
+        }
+    }
+
+    public void IdentifyUnassociatedCoverPhotos()
+    {
+        Log(LogLevel.info, $"Started identification of any cover photos that are not referenced in cache");
+        var cacheCollection = JsonHandler.DeserializeJsonFile<CachedMangaCollection>(cachePath);
+        var cache = cacheCollection.cache;
+
+        DirectoryInfo coverDir = new DirectoryInfo(coverRootPath);
+
+        foreach (var coverFile in coverDir.GetFiles())
+        {
+            bool associated = false;
+            foreach (var manga in cache.Values)
+            {
+                var coverPath = GetCoverPhotoPath(manga);
+                if (string.Equals(coverPath, coverFile.FullName, StringComparison.OrdinalIgnoreCase))
+                {
+                    associated = true;
+                    break;
+                }
+            }
+            if (!associated)
+            {
+                Log(LogLevel.warning, $"Found unassociated cover photo: {coverFile.FullName} | DELETING");
+                File.Delete(coverFile.FullName);
             }
         }
     }
